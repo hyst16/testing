@@ -1,0 +1,120 @@
+import requests
+from bs4 import BeautifulSoup
+
+# URL to scrape
+url = "https://www.sports-reference.com/cfb/schools/nebraska/2024-schedule.html"
+
+# Make a request to the website
+response = requests.get(url)
+
+# Parse the content using BeautifulSoup
+soup = BeautifulSoup(response.content, "html.parser")
+
+# Find the table containing the schedule
+schedule_table = soup.find("table", {"id": "schedule"})
+
+# Extract the table rows
+rows = schedule_table.find_all("tr")
+
+# Prepare a list to store the game data
+games = []
+
+# Loop through rows and extract data for each game
+for row in rows:
+    date_game = row.find("td", {"data-stat": "date_game"})
+    time_game = row.find("td", {"data-stat": "time_game"})
+    day_name = row.find("td", {"data-stat": "day_name"})
+    school_name = row.find("td", {"data-stat": "school_name"})
+    game_location = row.find("td", {"data-stat": "game_location"})
+    opp_name = row.find("td", {"data-stat": "opp_name"})
+    conf_abbr = row.find("td", {"data-stat": "conf_abbr"})
+    game_result = row.find("td", {"data-stat": "game_result"})
+    points = row.find("td", {"data-stat": "points"})
+    opp_points = row.find("td", {"data-stat": "opp_points"})
+    
+    if date_game and opp_name:
+        game_data = {
+            "date_game": date_game.text.strip() if date_game else "",
+            "time_game": time_game.text.strip() if time_game else "",
+            "day_name": day_name.text.strip() if day_name else "",
+            "school_name": school_name.text.strip() if school_name else "",
+            "game_location": game_location.text.strip() if game_location else "",
+            "opp_name": opp_name.find("a").text.strip() if opp_name.find("a") else "",
+            "conf_abbr": conf_abbr.text.strip() if conf_abbr else "",
+            "game_result": game_result.text.strip() if game_result else "",
+            "points": points.text.strip() if points else "",
+            "opp_points": opp_points.text.strip() if opp_points else "",
+        }
+        games.append(game_data)
+
+# Create HTML content with table
+html_content = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebraska Football Schedule 2024</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Nebraska Football Schedule 2024</h1>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Day</th>
+            <th>School</th>
+            <th>Location</th>
+            <th>Opponent</th>
+            <th>Conference</th>
+            <th>Result</th>
+            <th>Points</th>
+            <th>Opponent Points</th>
+        </tr>
+"""
+
+# Add rows for each game
+for game in games:
+    html_content += f"""
+        <tr>
+            <td>{game['date_game']}</td>
+            <td>{game['time_game']}</td>
+            <td>{game['day_name']}</td>
+            <td>{game['school_name']}</td>
+            <td>{game['game_location']}</td>
+            <td>{game['opp_name']}</td>
+            <td>{game['conf_abbr']}</td>
+            <td>{game['game_result']}</td>
+            <td>{game['points']}</td>
+            <td>{game['opp_points']}</td>
+        </tr>
+    """
+
+# Close HTML
+html_content += """
+    </table>
+</body>
+</html>
+"""
+
+# Save the HTML content to a file
+with open("nebraska_schedule.html", "w") as file:
+    file.write(html_content)
+
+print("HTML file created: nebraska_schedule.html")
